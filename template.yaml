@@ -32,6 +32,27 @@ Resources:
             Method: get
 
   # =========================
+  # Register Attendee Lambda
+  # =========================
+  RegisterAttendeeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: register_attendee/
+      Handler: app.lambda_handler
+      Runtime: python3.14
+      Architectures:
+        - x86_64
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref RegistrationsTable
+      Events:
+        RegisterAttendee:
+          Type: Api
+          Properties:
+            Path: /events/{id}/register
+            Method: post
+
+  # =========================
   # List Events Lambda
   # =========================
   ListEventsFunction:
@@ -111,6 +132,12 @@ Outputs:
       - "https://${ServerlessRestApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Prod/events/"
       - {}
 
+  RegisterAttendeeApi:
+    Description: API Gateway endpoint URL for Register Attendee function
+    Value: !Sub
+      - "https://${ServerlessRestApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Prod/events/{id}/register"
+      - {}
+
   HelloWorldFunction:
     Description: Hello World Lambda Function ARN
     Value: !GetAtt HelloWorldFunction.Arn
@@ -119,6 +146,10 @@ Outputs:
     Description: List Events Lambda Function ARN
     Value: !GetAtt ListEventsFunction.Arn
 
+  RegisterAttendeeFunction:
+    Description: Register Attendee Lambda Function ARN
+    Value: !GetAtt RegisterAttendeeFunction.Arn
+
   HelloWorldFunctionIamRole:
     Description: IAM Role created for Hello World function
     Value: !GetAtt HelloWorldFunctionRole.Arn
@@ -126,3 +157,7 @@ Outputs:
   ListEventsFunctionIamRole:
     Description: IAM Role created for List Events function
     Value: !GetAtt ListEventsFunctionRole.Arn
+
+  RegisterAttendeeFunctionIamRole:
+    Description: IAM Role created for Register Attendee function
+    Value: !GetAtt RegisterAttendeeFunctionRole.Arn
