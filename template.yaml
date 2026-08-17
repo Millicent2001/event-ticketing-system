@@ -74,6 +74,27 @@ Resources:
             Method: get
 
   # =========================
+  # Get Registration Lambda
+  # =========================
+  GetRegistrationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: get_registration/
+      Handler: app.lambda_handler
+      Runtime: python3.14
+      Architectures:
+        - x86_64
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref RegistrationsTable
+      Events:
+        GetRegistration:
+          Type: Api
+          Properties:
+            Path: /registrations/{id}
+            Method: get
+
+  # =========================
   # Events DynamoDB Table
   # =========================
   EventsTable:
@@ -120,24 +141,45 @@ Resources:
 # =========================
 Outputs:
 
+  # =========================
+  # Hello World API
+  # =========================
   HelloWorldApi:
     Description: API Gateway endpoint URL for Hello World function
     Value: !Sub
       - "https://${ServerlessRestApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Prod/hello/"
       - {}
 
+  # =========================
+  # List Events API
+  # =========================
   ListEventsApi:
     Description: API Gateway endpoint URL for List Events function
     Value: !Sub
       - "https://${ServerlessRestApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Prod/events/"
       - {}
 
+  # =========================
+  # Register Attendee API
+  # =========================
   RegisterAttendeeApi:
     Description: API Gateway endpoint URL for Register Attendee function
     Value: !Sub
       - "https://${ServerlessRestApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Prod/events/{id}/register"
       - {}
 
+  # =========================
+  # Get Registration API
+  # =========================
+  GetRegistrationApi:
+    Description: API Gateway endpoint URL for Get Registration function
+    Value: !Sub
+      - "https://${ServerlessRestApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Prod/registrations/{id}"
+      - {}
+
+  # =========================
+  # Lambda Function ARNs
+  # =========================
   HelloWorldFunction:
     Description: Hello World Lambda Function ARN
     Value: !GetAtt HelloWorldFunction.Arn
@@ -150,6 +192,13 @@ Outputs:
     Description: Register Attendee Lambda Function ARN
     Value: !GetAtt RegisterAttendeeFunction.Arn
 
+  GetRegistrationFunction:
+    Description: Get Registration Lambda Function ARN
+    Value: !GetAtt GetRegistrationFunction.Arn
+
+  # =========================
+  # IAM Roles
+  # =========================
   HelloWorldFunctionIamRole:
     Description: IAM Role created for Hello World function
     Value: !GetAtt HelloWorldFunctionRole.Arn
@@ -161,3 +210,7 @@ Outputs:
   RegisterAttendeeFunctionIamRole:
     Description: IAM Role created for Register Attendee function
     Value: !GetAtt RegisterAttendeeFunctionRole.Arn
+
+  GetRegistrationFunctionIamRole:
+    Description: IAM Role created for Get Registration function
+    Value: !GetAtt GetRegistrationFunctionRole.Arn
