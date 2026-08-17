@@ -1,45 +1,128 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
+
 Description: >
-  sam-temp
+  Event Ticketing System
+  Serverless application using AWS Lambda, API Gateway, and DynamoDB.
 
-  Sample SAM Template for sam-temp
-
-# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
     Timeout: 3
-
-    # You can add LoggingConfig parameters such as the Logformat, Log Group, and SystemLogLevel or ApplicationLogLevel. Learn more here https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-function.html#sam-function-loggingconfig.
     LoggingConfig:
       LogFormat: JSON
+
 Resources:
+
+  # =========================
+  # Hello World Lambda
+  # =========================
   HelloWorldFunction:
-    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Type: AWS::Serverless::Function
     Properties:
       CodeUri: hello_world/
       Handler: app.lambda_handler
       Runtime: python3.14
       Architectures:
-      - x86_64
+        - x86_64
       Events:
         HelloWorld:
-          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Type: Api
           Properties:
             Path: /hello
             Method: get
 
+  # =========================
+  # List Events Lambda
+  # =========================
+  ListEventsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: list_events/
+      Handler: app.lambda_handler
+      Runtime: python3.14
+      Architectures:
+        - x86_64
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref EventsTable
+      Events:
+        ListEvents:
+          Type: Api
+          Properties:
+            Path: /events
+            Method: get
+
+  # =========================
+  # Events DynamoDB Table
+  # =========================
+  EventsTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: Events
+      PrimaryKey:
+        Name: eventId
+        Type: String
+
+  # =========================
+  # Registrations DynamoDB Table
+  # =========================
+  RegistrationsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Registrations
+      BillingMode: PAY_PER_REQUEST
+
+      AttributeDefinitions:
+        - AttributeName: eventId
+          AttributeType: S
+        - AttributeName: registrationId
+          AttributeType: S
+        - AttributeName: email
+          AttributeType: S
+
+      KeySchema:
+        - AttributeName: eventId
+          KeyType: HASH
+        - AttributeName: registrationId
+          KeyType: RANGE
+
+      GlobalSecondaryIndexes:
+        - IndexName: EmailIndex
+          KeySchema:
+            - AttributeName: email
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+# =========================
+# Outputs
+# =========================
 Outputs:
-  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
-  # Find out more about other implicit resources you can reference within SAM
-  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+
   HelloWorldApi:
-    Description: API Gateway endpoint URL for Prod stage for Hello World 
-      function
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Prod/hello/"
+    Description: API Gateway endpoint URL for Hello World function
+    Value: !Sub
+      - "https://${ServerlessRestApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Prod/hello/"
+      - {}
+
+  ListEventsApi:
+    Description: API Gateway endpoint URL for List Events function
+    Value: !Sub
+      - "https://${ServerlessRestApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Prod/events/"
+      - {}
+
   HelloWorldFunction:
     Description: Hello World Lambda Function ARN
     Value: !GetAtt HelloWorldFunction.Arn
+
+  ListEventsFunction:
+    Description: List Events Lambda Function ARN
+    Value: !GetAtt ListEventsFunction.Arn
+
   HelloWorldFunctionIamRole:
-    Description: Implicit IAM Role created for Hello World function
+    Description: IAM Role created for Hello World function
     Value: !GetAtt HelloWorldFunctionRole.Arn
+
+  ListEventsFunctionIamRole:
+    Description: IAM Role created for List Events function
+    Value: !GetAtt ListEventsFunctionRole.Arn
